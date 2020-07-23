@@ -1,0 +1,17 @@
+# editorconfig.org
+# if you are using one of below editors, in order to use EditorConfig, you need to install a plugin
+# Atom, Brackets, Notepad++, Sublime Text, VisualStudio Code
+# for the full list, please visit: https://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 2
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false
