@@ -1,0 +1,19 @@
+{
+  "name": "sls-order-worker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "clean": "rm -rf dist/",
+    "build": "tsc"
+  },
+  "author": "bobby",
+  "license": "ISC",
+  "dependencies": {
+    "aws-lambda": "^1.0.6",
+    "axios": "^0.19.2"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.59"
+  }
+}
