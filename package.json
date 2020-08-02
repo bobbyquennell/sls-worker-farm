@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lerna": "lerna run "
+    "lerna": "lerna run ",
+    "bootstrap": "lerna bootstrap",
+    "build": "lerna run build"
   },
   "author": "bobby",
   "license": "ISC",

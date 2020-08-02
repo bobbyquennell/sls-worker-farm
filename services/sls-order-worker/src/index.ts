@@ -16,7 +16,7 @@ let response;
  *
  */
 
-exports.lambdaHandler = async (
+exports.worker = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
   try {

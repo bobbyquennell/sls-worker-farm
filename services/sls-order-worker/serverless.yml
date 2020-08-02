@@ -1,0 +1,73 @@
+service: sls-order-worker
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ap-southeast-2
+  stage: ${opt:stage, self:custom.defaultStage}
+  profile: ${self:custom.profiles.${opt:stage, self:provider.stage, 'dev'}}
+
+  deploymentBucket:
+    name: logicplatypus-labs-serverless-deployments-${self:provider.stage}
+    maxPreviousDeploymentArtifacts: 2
+  tags: # tags will be applied to all resources
+    logic-platypus:project: event-driven-architecture-demo
+    logic-platypus:env: ${self:provider.stage}
+  stackTags: # tags will be applied to cloudformation
+    logic-platypus:project: event-driven-architecture-demo
+    logic-platypus:env: ${self:provider.stage}
+  iamRoleStatements: # set permissions for all functions
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:*
+
+custom:
+  defaultStage: dev
+  profiles:
+    dev: serverless-admin
+    prod: serverless-admin
+  description: order service, CRUD
+
+package:
+  exclude:
+    - ./**
+    - '!dist/**'
+    - '!node_modules/**'
+
+functions:
+  worker:
+    handler: dist/index.worker
+    name: ${opt:stage, self:custom.defaultStage}-sls-order-worker
+    description: ${self:custom.description}
+    memorySize: 512 # default value is 1024
+    environment:
+      ENVIRONMENT: ${self:provider.stage}
+    events:
+      - http:
+          path: orders/create
+          method: post
+      - http:
+          path: orders/{id}
+          method: get
+resources: # CloudFormation template syntax
+  Resources:
+    orderTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ordersTable
+        KeySchema:
+          - AttributeName: orderId
+            KeyType: HASH
+        AttributeDefinitions:
+          - AttributeName: orderId
+            AttributeType: S
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1

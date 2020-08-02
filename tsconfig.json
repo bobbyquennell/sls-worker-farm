@@ -5,7 +5,7 @@
       "baseUrl": "src",
       "esModuleInterop": true,
       "importsNotUsedAsValues": "preserve",
-      "lib": ["ES2020", "DOM"],
+      "lib": ["ES2019"],
       "module": "CommonJS",
       "moduleResolution": "Node",
       "noImplicitAny": true,
@@ -23,6 +23,8 @@
     "**/dist",
     "**/*.test.ts",
     "**/__test__",
-    "**/__mocks__"
+    "**/__mocks__",
+    "**/.serverless",
+    "**/.vscode"
   ]
 }
