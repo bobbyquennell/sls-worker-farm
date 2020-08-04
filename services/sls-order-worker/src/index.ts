@@ -1,32 +1,23 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import axios from 'axios';
-// const url = 'http://checkip.amazonaws.com/';
-let response;
-
-exports.worker = async (
-  event: APIGatewayProxyEvent,
-): Promise<APIGatewayProxyResult> => {
-  try {
-    const result = await axios({
-      method: 'get',
-      url: 'https://jsonplaceholder.typicode.com/todos/1',
-    });
-    const inboundMsg = JSON.parse(event?.body);
-    console.log(
-      `received message ===> ${inboundMsg?.name} said: ${inboundMsg?.message}`,
-    );
-
-    response = {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: `Hi ${inboundMsg?.name ?? 'there'}, I am Peggy`,
-        additionalData: result.data,
-      }),
-    };
-  } catch (err) {
-    console.log(err);
-    return err;
-  }
-
-  return response;
+import { SQSEvent, SQSRecord, SQSHandler } from 'aws-lambda';
+import { OrderEvent, OrderEventType } from './types';
+import orderHandler from './handler';
+export const worker: SQSHandler = async (message: SQSEvent): Promise<void> => {
+  const parser = (record: SQSRecord): OrderEvent => {
+    return JSON.parse(record.body);
+  };
+  const bodies: OrderEvent[] = message.Records.map(parser);
+  await Promise.all(
+    bodies.map((body: OrderEvent) => {
+      switch (body.eventType) {
+        case OrderEventType.OrderRequested:
+          return orderHandler(body);
+        default:
+          throw new Error(
+            `Unsupported event type received: "${body.eventType}"`,
+          );
+      }
+    }),
+  ).catch((err) => {
+    throw new Error('Failed to execute.');
+  });
 };

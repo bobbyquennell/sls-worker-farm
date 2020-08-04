@@ -50,18 +50,18 @@ functions:
     environment:
       ENVIRONMENT: ${self:provider.stage}
     events:
-      - http:
-          path: orders/create
-          method: post
-      - http:
-          path: orders/{id}
-          method: get
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - InputQueue
+              - Arn
+
 resources: # CloudFormation template syntax
   Resources:
-    orderTable:
+    OrderTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ordersTable
+        TableName: orderTable
         KeySchema:
           - AttributeName: orderId
             KeyType: HASH
@@ -71,3 +71,25 @@ resources: # CloudFormation template syntax
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+    InputQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${opt:stage, self:custom.defaultStage}-order-input-queue
+    Topic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${opt:stage, self:custom.defaultStage}-order-topic
+
+    SubScription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint:
+          Fn::GetAtt:
+            - InputQueue
+            - Arn
+        FilterPolicy:
+          EventType: # this is a self-defined value from the SNS topic's messageAttributes, see: SNS.Types.PublishInput
+            - OrderRequested
+        Protocol: sqs
+        TopicArn: !Ref Topic
+

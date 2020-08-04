@@ -14,6 +14,7 @@
     "axios": "^0.19.2"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.59"
+    "@types/aws-lambda": "^8.10.59",
+    "aws-sdk": "^2.726.0"
   }
 }
