@@ -75,6 +75,16 @@ resources: # CloudFormation template syntax
       Type: AWS::SQS::Queue
       Properties:
         QueueName: ${opt:stage, self:custom.defaultStage}-order-input-queue
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt:
+              - DeadLetterQueue
+              - Arn
+          maxReceiveCount: 5
+    DeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:provider.stage}-${self:service}-dead-letters
     Topic:
       Type: AWS::SNS::Topic
       Properties:
@@ -93,3 +103,23 @@ resources: # CloudFormation template syntax
         Protocol: sqs
         TopicArn: !Ref Topic
 
+    OrderTopicToInputQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: "AllowSNSPublishStatement"
+              Effect: Allow
+              Principal: "*"
+              Resource: !GetAtt
+                - InputQueue
+                - Arn
+              Action:
+                - "SQS:SendMessage"
+                - "SQS:ReceiveMessage"
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: !Ref Topic
+        Queues:
+          - Ref: InputQueue
