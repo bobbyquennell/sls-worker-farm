@@ -12,7 +12,7 @@ export const worker: SQSHandler = async (event: SQSEvent): Promise<void> => {
       const orderMessage: OrderEvent = JSON.parse(body.Message);
       switch (orderMessage.eventType) {
         case OrderEventType.OrderRequested:
-          return orderHandler(orderMessage);
+          return orderHandler(orderMessage.message);
         default:
           throw new Error(
             `Unsupported event type received: "${orderMessage.eventType}"`,
