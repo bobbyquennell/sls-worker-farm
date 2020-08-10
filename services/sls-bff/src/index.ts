@@ -1,5 +1,5 @@
 import { APIGatewayProxyResult, APIGatewayProxyEvent } from 'aws-lambda';
-import { OrderEvent, OrderEventType, OrderCreateRequest } from './types';
+import { OrderEvent, EventType, OrderRequestedMsg } from './types';
 import { SNS } from 'aws-sdk';
 
 export const worker = async (
@@ -7,20 +7,20 @@ export const worker = async (
 ): Promise<APIGatewayProxyResult> => {
   const snsConfig: SNS.ClientConfiguration = { region: 'ap-southeast-2' };
   const sns = new SNS(snsConfig);
-  const orderRequest: OrderCreateRequest = JSON.parse(event?.body);
+  const orderRequest: OrderRequestedMsg = JSON.parse(event?.body);
 
   console.log('sls-bff ===> orderRequest:', orderRequest);
-  console.log(OrderEventType.OrderRequested);
+  console.log(EventType.OrderRequested);
   const orderEvent: SNS.PublishInput = {
     TopicArn: process.env.ORDER_TOPIC_ARN,
     Message: JSON.stringify({
-      eventType: OrderEventType.OrderRequested,
+      eventType: EventType.OrderRequested,
       message: orderRequest,
     } as OrderEvent),
     MessageAttributes: {
       EventType: {
         DataType: 'String',
-        StringValue: OrderEventType.OrderRequested,
+        StringValue: EventType.OrderRequested,
       },
     },
   };

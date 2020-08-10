@@ -1,9 +1,13 @@
 export interface OrderEvent {
-  eventType: OrderEventType;
-  message: OrderCreateRequest;
+  eventType: EventType;
+  message:
+    | OrderRequestedMsg
+    | OrderCreatedMsg
+    | OrderConfirmedMsg
+    | PaymentSucceededMsg;
 }
 
-export interface OrderCreateRequest {
+export interface OrderRequestedMsg {
   itemId: string;
   itemName: string;
   itemQty: number;
@@ -14,6 +18,23 @@ export interface OrderCreateRequest {
   customerPhone: string;
   deliveryAddress: string;
 }
-export enum OrderEventType {
+export enum EventType {
   OrderRequested = 'OrderRequested',
+  OrderCreated = 'OrderCreated',
+  OrderConfirmed = 'OrderConfirmed',
+  PaymentSucceeded = 'PaymentSucceeded',
+}
+
+export interface OrderCreatedMsg {
+  orderId: string;
+  paymentToken: string;
+}
+
+export interface OrderConfirmedMsg {
+  orderId: string;
+}
+
+export interface PaymentSucceededMsg {
+  orderId: string;
+  paymentId: string;
 }

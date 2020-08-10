@@ -27,7 +27,10 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
       Resource: arn:aws:dynamodb:${self:provider.region}:*:*
-
+    - Effect: Allow
+      Action:
+        - SNS:Publish
+      Resource: arn:aws:sns:${self:provider.region}:267304633300:${opt:stage, self:custom.defaultStage}-order-topic
 custom:
   defaultStage: dev
   profiles:
@@ -49,10 +52,13 @@ functions:
     memorySize: 512 # default value is 1024
     environment:
       ENVIRONMENT: ${self:provider.stage}
+      ORDER_TOPIC_ARN: arn:aws:sns:${self:provider.region}:267304633300:${opt:stage, self:custom.defaultStage}-order-topic
     events:
-      - http:
-          path: payment/create
-          method: post
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - InputQueue
+              - Arn
 resources: # CloudFormation template syntax
   Resources:
     paymentTable:
@@ -68,3 +74,52 @@ resources: # CloudFormation template syntax
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+    InputQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${opt:stage, self:custom.defaultStage}-payment-input-queue
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt:
+              - DeadLetterQueue
+              - Arn
+          maxReceiveCount: 5
+    DeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:provider.stage}-${self:service}-dead-letters
+
+    SubScription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint:
+          Fn::GetAtt:
+            - InputQueue
+            - Arn
+        FilterPolicy:
+          EventType: # this is a self-defined value from the SNS topic's messageAttributes, see: SNS.Types.PublishInput
+            - OrderCreated
+        Protocol: sqs
+        TopicArn: arn:aws:sns:${self:provider.region}:267304633300:${opt:stage, self:custom.defaultStage}-order-topic
+
+    TopicToInputQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: "AllowSNSPublishStatement"
+              Effect: Allow
+              Principal: "*"
+              Resource: !GetAtt
+                - InputQueue
+                - Arn
+              Action:
+                - "SQS:SendMessage"
+                - "SQS:ReceiveMessage"
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: arn:aws:sns:${self:provider.region}:267304633300:${opt:stage, self:custom.defaultStage}-order-topic
+        Queues:
+          - Ref: InputQueue
+

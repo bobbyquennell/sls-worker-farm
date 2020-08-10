@@ -1,26 +1,25 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { SQSEvent, SQSHandler, SNSMessage } from 'aws-lambda';
+import { OrderEvent, EventType, OrderCreatedMsg } from './types';
+import paymentHandler from './handler';
 
-let response;
+export const worker: SQSHandler = async (event: SQSEvent): Promise<void> => {
+  const bodies: SNSMessage[] = event.Records.map((record) =>
+    JSON.parse(record.body),
+  );
 
-exports.worker = async (
-  event: APIGatewayProxyEvent,
-): Promise<APIGatewayProxyResult> => {
-  try {
-    const inboundMsg = JSON.parse(event?.body);
-    console.log(
-      `sls-payment-worker ===> received payment request: ${inboundMsg?.paymentRequest}`,
-    );
-
-    response = {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: `Payment Success`,
-      }),
-    };
-  } catch (err) {
-    console.log(err);
-    return err;
-  }
-
-  return response;
+  await Promise.all(
+    bodies.map((body) => {
+      const orderMessage: OrderEvent = JSON.parse(body.Message);
+      switch (orderMessage.eventType) {
+        case EventType.OrderCreated:
+          return paymentHandler(orderMessage.message as OrderCreatedMsg);
+        default:
+          throw new Error(
+            `Unsupported event type received: "${orderMessage.eventType}"`,
+          );
+      }
+    }),
+  ).catch((err) => {
+    throw new Error('Failed to execute.');
+  });
 };

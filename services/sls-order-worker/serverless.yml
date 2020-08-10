@@ -27,6 +27,10 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
       Resource: arn:aws:dynamodb:${self:provider.region}:*:*
+    - Effect: Allow
+      Action:
+        - SNS:Publish
+      Resource: arn:aws:sns:${self:provider.region}:267304633300:${opt:stage, self:custom.defaultStage}-order-topic
 
 custom:
   defaultStage: dev
@@ -49,6 +53,7 @@ functions:
     memorySize: 512 # default value is 1024
     environment:
       ENVIRONMENT: ${self:provider.stage}
+      ORDER_TOPIC_ARN: arn:aws:sns:${self:provider.region}:267304633300:${opt:stage, self:custom.defaultStage}-order-topic
     events:
       - sqs:
           arn:
@@ -100,6 +105,7 @@ resources: # CloudFormation template syntax
         FilterPolicy:
           EventType: # this is a self-defined value from the SNS topic's messageAttributes, see: SNS.Types.PublishInput
             - OrderRequested
+            - PaymentSucceeded
         Protocol: sqs
         TopicArn: !Ref Topic
 
