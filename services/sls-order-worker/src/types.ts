@@ -1,13 +1,13 @@
-export interface OrderEvent {
+export interface SagaEvent {
   eventType: EventType;
+  correlationId: string;
   message:
     | OrderRequestedMsg
     | OrderCreatedMsg
     | OrderConfirmedMsg
     | PaymentSucceededMsg;
 }
-
-export interface OrderRequestedMsg {
+export interface OrderRequest {
   itemId: string;
   itemName: string;
   itemQty: number;
@@ -18,11 +18,8 @@ export interface OrderRequestedMsg {
   customerPhone: string;
   deliveryAddress: string;
 }
-export enum EventType {
-  OrderRequested = 'OrderRequested',
-  OrderCreated = 'OrderCreated',
-  OrderConfirmed = 'OrderConfirmed',
-  PaymentSucceeded = 'PaymentSucceeded',
+export interface OrderRequestedMsg extends OrderRequest {
+  orderId: string;
 }
 
 export interface OrderCreatedMsg {
@@ -37,4 +34,11 @@ export interface OrderConfirmedMsg {
 export interface PaymentSucceededMsg {
   orderId: string;
   paymentId: string;
+}
+
+export enum EventType {
+  OrderRequested = 'OrderRequested',
+  OrderCreated = 'OrderCreated',
+  OrderConfirmed = 'OrderConfirmed',
+  PaymentSucceeded = 'PaymentSucceeded',
 }

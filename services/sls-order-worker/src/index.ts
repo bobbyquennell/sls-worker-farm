@@ -1,6 +1,6 @@
 import { SQSEvent, SQSHandler, SNSMessage } from 'aws-lambda';
 import {
-  OrderEvent,
+  SagaEvent,
   EventType,
   OrderRequestedMsg,
   PaymentSucceededMsg,
@@ -14,19 +14,25 @@ export const worker: SQSHandler = async (event: SQSEvent): Promise<void> => {
 
   await Promise.all(
     bodies.map((body) => {
-      const orderMessage: OrderEvent = JSON.parse(body.Message);
-      switch (orderMessage.eventType) {
+      const sagaEvent: SagaEvent = JSON.parse(body.Message);
+      switch (sagaEvent.eventType) {
         case EventType.OrderRequested:
-          return createOrder(orderMessage.message as OrderRequestedMsg);
+          return createOrder(
+            sagaEvent.message as OrderRequestedMsg,
+            sagaEvent.correlationId,
+          );
         case EventType.PaymentSucceeded:
-          return confirmOrder(orderMessage.message as PaymentSucceededMsg);
+          return confirmOrder(
+            sagaEvent.message as PaymentSucceededMsg,
+            sagaEvent.correlationId,
+          );
         default:
           throw new Error(
-            `Unsupported event type received: "${orderMessage.eventType}"`,
+            `Order service: Unsupported saga event type received: "${sagaEvent.eventType}, correlationId: ${sagaEvent.correlationId}"`,
           );
       }
     }),
   ).catch((err) => {
-    throw new Error('Failed to execute.');
+    throw new Error('Order service: Failed to execute.');
   });
 };

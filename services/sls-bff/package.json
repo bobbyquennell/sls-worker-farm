@@ -11,10 +11,12 @@
   "license": "ISC",
   "dependencies": {
     "aws-lambda": "^1.0.6",
-    "axios": "^0.19.2"
+    "axios": "^0.19.2",
+    "uuid": "^8.3.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.59",
+    "@types/uuid": "^8.3.0",
     "aws-sdk": "^2.726.0"
   }
 }
